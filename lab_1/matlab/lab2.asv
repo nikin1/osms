@@ -1,0 +1,23 @@
+[y, Fs] = audioread('voice.wav');
+
+
+% size = 395180 * 8; % размер файла переводим в биты 
+% cnt_samples=size/16 % 16-битная кодировка. Получаем кол-во семплов
+% my_f = cnt_samples / 4.48 %
+
+y1=downsample(y, 10); % прореживаем массив y, оставляя лишь каждый 10й отсчет
+zvuk = audioplayer(y1,Fs/10); %создаем объект gong типа audioplayer
+% play(zvuk); %воспроизводим звук
+% plot(y1); %виз
+
+
+
+y_f = fft(y);
+n = length(y);
+frequencies = (0:n-1)*(fs/n); % Вектор частот
+
+% f = (0:length(y_f)-1)*fs/length(y_f);
+plot(f, abs(y_f))
+xlabel('Frequency (Hz)')
+ylabel('Magnitude')
+title('Magnitude')
