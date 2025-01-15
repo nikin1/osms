@@ -1,13 +1,13 @@
-[y, Fs] = audioread('voice.wav');
+[y, Fs] = audioread('src/voice.wav');
 
 
-% size = 395180 * 8; % размер файла переводим в биты 
+% size = 395180 * 8; % размер файла переводим в биты
 % cnt_samples=size/16 % 16-битная кодировка. Получаем кол-во семплов
 % my_f = cnt_samples / 4.48 %
 
 y1=downsample(y, 10); % прореживаем массив y, оставляя лишь каждый 10й отсчет
 zvuk = audioplayer(y1,Fs/10); %создаем объект gong типа audioplayer
-% play(zvuk); %воспроизводим звук
+get(zvuk); %воспроизводим звук
 % plot(y1); %виз
 
 

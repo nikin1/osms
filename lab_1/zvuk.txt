@@ -1,0 +1,11 @@
+# Created by Octave 8.3.0, Thu Dec 12 11:20:18 2024 +07 <santonet@santonet-BOM-WXX9>
+# name: zvuk
+# type: class
+# classname: audioplayer
+# length: 1
+# name: player
+# type: cell
+# rows: 1
+# columns: 1
+# name: <cell-element>
+# type: audioplayer
