@@ -63,13 +63,13 @@ def NormalizedCorrelation(x, y):
     return corr_array
 
 def correlation_receiver(x, y, stop_word):
-    corr_array = NormalizedCorrelation(x, y)  
-    start_useful_bits = np.argmax(corr_array)   
+    corr_array = NormalizedCorrelation(x, y)
+    start_useful_bits = np.argmax(corr_array)  
     print(f"Индекс начала полезного сигнала: {start_useful_bits}")
     corrected_signal = x[start_useful_bits:]
     
-    corr_array_stop = NormalizedCorrelation(corrected_signal, stop_word)    
-    start_stop_word = np.argmax(corr_array_stop)  
+    corr_array_stop = NormalizedCorrelation(corrected_signal, stop_word)
+    start_stop_word = np.argmax(corr_array_stop)
     corrected_signal = corrected_signal[:start_stop_word]
             
     return corrected_signal
@@ -103,19 +103,70 @@ def ascii_decoder(bit_sequence):
         text += chr(ascii_symbol)
     return text
 
-# Spectrum
-def plot_spectrum(signal, name):
-    spectrum = fftpack.fft(signal)
-    freqs = np.arange(0, 1, 1/len(signal))
 
-    plt.plot(freqs, np.abs(spectrum), label=name)
-  
-      
-# 1
-name = input("Enter name: ")
-surname = input("Enter surname: ")
+def plot_spectrum(signal, title, fs):
+    # N = len(signal)
+    # T = N / fs
+    # df = fs / N  # Разрешение по частоте
 
+    # yf = fftpack.fft(signal)
+    # xf = np.fft.fftfreq(N, 1/fs)[:N//2 + 1]  # +1 для чётных N
+
+    # plt.plot(xf, 2/N * np.abs(yf[:N//2 + 1]), label=title)
+    # plt.axvline(x=fs/2, color='r', linestyle='--', label='Частота Найквиста')
+    N = len(signal)
+    yf = np.fft.fft(signal)
+    xf = np.fft.fftfreq(N, 1/fs)[:N//2 + 1]  # Частоты от 0 до fs/2
+    plt.plot(xf, 2/N * np.abs(yf[:N//2 + 1]), label=f'{title}, df={fs/N:.2f} Hz')
+    plt.axvline(x=fs/2, color='r', linestyle='--')    
+
+
+
+def my_plot_spectrum(signal, title, fs):
+    N = len(signal)
+    X = []
+    for k in range(N):
+        X.append(0)
+        for n in range(N):
+            X[k] += signal[n] * np.e ** (-np.j * 2 * np.pi * k * n / N)
+            
+    
+    return X
+
+    
+    
+    
+    
+def spectrum_plot(signal, fs, n, is_noisy):
+    N = len(signal)
+    spectrum = np.fft.fft(signal,n=N)
+    freq = np.fft.fftfreq(N, 1/fs)
+    amplitude = np.abs(spectrum)
+
+    # print(amplitude)
+    # Построение графика
+    plt.figure(figsize=(12, 5))
+    plt.stem(freq, amplitude,label='Амплитудный спектр')
+    # plt.axvline(fs/2, color='r', linestyle='--', alpha=0.5, label='Частота Найквиста (25 Гц)')
+    if is_noisy:
+        plt.title(f'Амплитудный спектр зашумленного сигнала (fs={fs} Гц, N={n})')
+    else:
+        plt.title(f'Амплитудный спектр незашумленного сигнала (fs={fs} Гц, N={n})')        
+    plt.xlabel('Частота (Гц)')
+    plt.ylabel('Амплитуда')
+    plt.xlim(-fs/2, fs/2)  # Показываем только полезный диапазон
+    plt.grid()
+    plt.legend()
+    plt.show() 
+    
+    
+
+# name = input("Enter name: ")
+# surname = input("Enter surname: ")
+name = "nik"
+surname = "shap"
 # 2
+
 name_surname = name + " " + surname
 bit_sequence = ascii_coder(name_surname)
 
@@ -166,7 +217,8 @@ plt.title('Временные отсчёты сигнала для bit sequence'
 
 # 6
 signal = [0] * (2 * len(signal_samples))
-position = int(input(f"Введите номер позиции для вставки битовой последовательности (от 0 до {len(signal_samples)}): "))
+# position = int(input(f"Введите номер позиции для вставки битовой последовательности (от 0 до {len(signal_samples)}): "))
+position = 6
 insert_length = min(len(signal_samples), (2 * len(signal_samples)) - position)
 signal[position:position + insert_length] = signal_samples[:insert_length]
 
@@ -179,6 +231,7 @@ plt.title('Signal')
 
 # 7
 sigma = float(input("Введите значение отклонения (sigma): "))
+# sigma = 0.001
 noise = np.random.normal(0, sigma, 2 * len(signal_samples))
 noisy_signal = [s + n for s, n in zip(signal, noise)]
 
@@ -222,43 +275,37 @@ plt.title('Восстановленные bit sequence + CRC')
 # 11
 if check_packet(bit_sequence_crc_restored, G) == True:
     print("Ошибок в принятом пакете не обнаружено.")
-    # 12)
+# 12)
     bit_sequence_restored = bit_sequence_crc_restored[:-(len(G) - 1)]
     restored_text = ascii_decoder(bit_sequence_restored)
     print(f"Востановленный текст: {restored_text}")
 else:
     print("Обнаружена ошибка в принятом пакете.")
     
-# 13
-N_array = [5, 10, 20]
+
+
+# Параметры
+N_array = [N//2, N, N*2]
+
+fs = N  # Фиксированная частота дискретизации
+# sigma = 2  # Уровень шума
+position = 0  # Позиция вставки сигнала
 
 plt.figure(figsize=(13, 10))
-for N in N_array:
-    signal_samples = bits_to_samples(bit_sequence_crc_gold_stop, N)
-    plot_spectrum(signal_samples, f'Передаваемый сигнал, N={N}')
-
-plt.xlabel('Частота (Гц)')
-plt.ylabel('Амплитуда')
-plt.title('Спектры передаваемого сигнала для N/2, N, 2N')
-plt.legend()
-plt.grid()
-
-plt.figure(figsize=(13, 10))
-for N in N_array:
-    signal_samples = bits_to_samples(bit_sequence_crc_gold_stop, N)
-    signal = [0] * (2 * len(signal_samples))
-    insert_length = min(len(signal_samples), (2 * len(signal_samples)) - position)
-    signal[position:position + insert_length] = signal_samples[:insert_length]
-    noise = np.random.normal(0, sigma, 2 * len(signal_samples))
-    noisy_signal = [s + n for s, n in zip(signal, noise)]
+for N_i in N_array:
     
-    plot_spectrum(noisy_signal, f'Зашумленный сигнал, N={N}')
+    signal_samples = bits_to_samples(bit_sequence_crc_gold_stop, N_i)
+    # signal = np.zeros(2 * len(signal_samples))
+    # signal[position:position+len(signal_samples)] = signal_samples
     
-plt.xlabel('Частота (Гц)')
-plt.ylabel('Амплитуда')
-plt.title('Спектры зашумленных сигналов для N/2, N, 2N')
-plt.legend()
-plt.grid()
-plt.show()
+    # print("len(signal_samples): ", len(signal_samples))
+    noise = np.random.normal(0, sigma, len(signal_samples))
+    noisy_signal = signal_samples + noise
+    
+    # fs = fs_base * (N / N_ref)
+    # plot_spectrum(noisy_signal, f'N={N}', fs)
+    spectrum_plot(signal_samples, fs, N_i, 0)
+    spectrum_plot(noisy_signal, fs, N_i, 1)
+    # plot_spectrum_normalized(noisy_signal, f'N={N}')
 
 
